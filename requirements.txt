@@ -1,0 +1,8 @@
+pyyaml
+librosa
+soundfile
+pandas
+matplotlib
+tqdm
+torch
+torchaudio

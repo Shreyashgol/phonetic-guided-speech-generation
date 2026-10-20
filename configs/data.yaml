@@ -1,0 +1,22 @@
+# Shared by Phase 1 and Phase 2. Do not change after alignments are cached.
+audio:
+  sample_rate: 22050
+  n_fft: 1024
+  win_length: 1024
+  hop_length: 256
+  n_mels: 80
+  f_min: 0
+  f_max: 8000
+
+paths:
+  raw: data/raw/LJSpeech-1.1
+  processed: data/processed
+  alignments: data/alignments
+  splits: data/splits
+  results: results
+
+split:
+  seed: 42
+  train: 0.90
+  val: 0.05
+  test: 0.05

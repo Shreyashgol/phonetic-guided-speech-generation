@@ -1,0 +1,17 @@
+# Data and large artifacts (never commit)
+data/raw/*
+data/processed/*
+data/alignments/*
+*.tar.bz2
+*.wav
+*.pt
+*.pth
+*.ckpt
+# Keep folder placeholders
+!data/*/.gitkeep
+# Python / notebooks
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.env
+*.key
