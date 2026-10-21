@@ -33,7 +33,14 @@ Download `LJSpeech-1.1.tar.bz2` and extract it to `data/raw/LJSpeech-1.1/` (or p
 |---|---|---|
 | 00 | environment and setup | done |
 | 01 | dataset overview | done |
-| 02-09 | text prep, alignment, duration EDA, features, models, evaluation, report figures | todo |
+| 02 | text and phoneme prep | ready |
+| 03 | MFA alignment and QA | ready |
+| 04 | duration EDA | ready |
+| 05 | feature engineering and frozen splits | ready |
+| 06 | baseline and classical models | ready |
+| 07 | neural (BiLSTM) duration model | ready |
+| 08 | evaluation, error analysis, ablation | ready |
+| 09 | report figures, tables, IEEE skeleton | ready |
 
 ## Team
 See `CONTRIBUTIONS.md` (to be filled by each member).
