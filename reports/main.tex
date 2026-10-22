@@ -1,0 +1,17 @@
+\documentclass[conference]{IEEEtran}
+\usepackage{graphicx,booktabs,amsmath,cite}
+\title{Phonetic Guided Speech Generation: Phase 1, Alignment and Duration Prediction}
+\author{\IEEEauthorblockN{Team members}\IEEEauthorblockA{Rishihood University}}
+\begin{document}\maketitle
+\begin{abstract} One paragraph: problem, data (LJSpeech, 13{,}100 clips), method (MFA alignment + duration predictors), main result (best MAE in frames/ms), main limitation. \end{abstract}
+\section{Introduction} % motivation: TTS needs duration; what Phase 1 delivers
+\section{Literature Review} % McAuliffe 2017 (MFA); HMM forced alignment; FastSpeech duration predictor; Grad-TTS as Phase 2 context
+\section{Dataset and EDA} % clips, alignment failures/QA, duration distributions; \input{tables/dataset.tex}; \includegraphics{figures/overall_hist.png}
+\section{Forced Alignment: Theory} % 3-state left-to-right HMM, GMM emissions, Viterbi, EM; HMM duration model vs data (figures/hmm_vs_real.png)
+\section{Feature Engineering} % five feature groups, utterance-level split, target in log frames
+\section{Models} % baselines, Ridge, gradient boosting, BiLSTM; loss and tuning protocol
+\section{Results} % \input{tables/models.tex}; figures/models.png; ablation: \input{tables/ablation.tex}
+\section{Error Analysis and Limitations} % bias, worst cases, label noise from forced alignment
+\section{Conclusion and Phase 2 Outlook}
+\bibliographystyle{IEEEtran}
+\end{document}

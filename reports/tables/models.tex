@@ -1,0 +1,16 @@
+\begin{table}
+\caption{Duration prediction on the test set (frames of 11.6 ms; 95\% CI by utterance bootstrap).}
+\label{tab:models}
+\begin{tabular}{lrrrrrr}
+\toprule
+model & mae_frames & ci_low & ci_high & mae_ms & rmse_frames & r2 \\
+\midrule
+bilstm & 1.330 & 1.310 & 1.353 & 15.441 & 1.949 & 0.775 \\
+hist_gbm & 1.540 & 1.517 & 1.566 & 17.879 & 2.265 & 0.697 \\
+ridge & 2.013 & 1.987 & 2.043 & 23.373 & 2.877 & 0.511 \\
+phone_stress_pause_backoff & 2.220 & 2.193 & 2.248 & 25.778 & 3.122 & 0.424 \\
+phone_mean_median & 2.400 & 2.371 & 2.431 & 27.869 & 3.515 & 0.269 \\
+global_mean & 3.138 & 3.110 & 3.167 & 36.436 & 4.112 & -0.000 \\
+\bottomrule
+\end{tabular}
+\end{table}

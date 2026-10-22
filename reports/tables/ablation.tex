@@ -1,0 +1,17 @@
+\begin{table}
+\caption{Feature-group ablation (gradient-boosted trees).}
+\label{tab:ablation}
+\begin{tabular}{lrrrr}
+\toprule
+setting & mae_frames & rmse_frames & r2 & delta_mae_vs_all \\
+\midrule
+all features & 1.540 & 2.265 & 0.697 & 0.000 \\
+without identity & 2.099 & 3.011 & 0.464 & 0.559 \\
+without context & 1.942 & 2.736 & 0.557 & 0.402 \\
+without word & 1.601 & 2.349 & 0.674 & 0.061 \\
+without utterance & 1.534 & 2.258 & 0.699 & -0.006 \\
+without pause_punct & 1.654 & 2.541 & 0.618 & 0.114 \\
+identity only & 2.388 & 3.472 & 0.287 & 0.848 \\
+\bottomrule
+\end{tabular}
+\end{table}

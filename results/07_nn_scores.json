@@ -1,0 +1,22 @@
+{
+ "model": "bilstm",
+ "val_mae_frames": 1.3291836861403086,
+ "val_mae_ms": 15.431792455869342,
+ "val_rmse_frames": 1.9773868589749206,
+ "val_r2": 0.7715289006510592,
+ "test_mae_frames": 1.3299744685392414,
+ "test_mae_ms": 15.440973421589378,
+ "test_rmse_frames": 1.949216995244815,
+ "test_r2": 0.775304498514369,
+ "config": {
+  "batch": 64,
+  "lr": 0.002,
+  "epochs": 30,
+  "patience": 5,
+  "hid": 128,
+  "layers": 2,
+  "drop": 0.2,
+  "seed": 0
+ },
+ "epochs_run": 25
+}
