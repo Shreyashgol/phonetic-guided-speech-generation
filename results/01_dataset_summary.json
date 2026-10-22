@@ -1,0 +1,12 @@
+{
+  "n_clips": 13100,
+  "total_hours": 23.92,
+  "mean_duration_s": 6.57,
+  "max_duration_s": 10.1,
+  "sample_rates": {
+    "22050": 13100
+  },
+  "mean_words_per_sec": 2.59,
+  "vocab_size": 14775,
+  "rows_raw_neq_norm": 1505
+}

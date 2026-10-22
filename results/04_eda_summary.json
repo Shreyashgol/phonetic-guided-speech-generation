@@ -1,0 +1,7 @@
+{
+ "n_utts": 11416,
+ "n_phones": 777055,
+ "mean_frames": 7.456041078173359,
+ "median_frames": 7.0,
+ "p999_frames": 30.0
+}
