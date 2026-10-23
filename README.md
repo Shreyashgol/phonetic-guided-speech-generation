@@ -70,7 +70,6 @@ Run in order. Notebooks are written for Google Colab with the project folder on 
 
 | # | Notebook | Purpose | Reads | Writes |
 |---|---|---|---|---|
-| 00 | `00_environment_and_setup` | Folder skeleton, shared config, environment check | - | `configs/data.yaml`, `src/utils/config.py` |
 | 01 | `01_dataset_overview` | Metadata, durations, audio properties, listening, alignment-risk scan | LJSpeech | `results/01_*`, `processed/metadata_with_stats.csv` |
 | 02 | `02_text_and_phoneme_prep` | Text cleaning, punctuation codes, MFA corpora, phoneme inventory | metadata | `processed/transcripts_clean.csv`, `src/features/phones.py` |
 | 03 | `03_alignment_run_and_qa` | Install MFA, OOV check, align, parse, QA flags, spot checks | MFA corpora | `alignments/phone_durations.csv.gz`, `failed_utterances.csv`, `alignment_qa.csv` |
