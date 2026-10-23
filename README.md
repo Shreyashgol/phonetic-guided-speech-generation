@@ -1,5 +1,7 @@
 # Phonetic Guided Speech Generation
 
+📄 **Phase 1 Report:** [Read Report on Google Drive](https://drive.google.com/file/d/1xO5BsrqZUCg760619DLzAZWQXm4BS0Gm/view?usp=sharing)
+
 **Phoneme alignment and duration modelling for text-to-speech, built on LJSpeech.**
 Advanced ML / Deep Learning course project (Rishihood University). The project compares **explicit phoneme-duration alignment** with a **learned acoustic generator** (diffusion extension), and is delivered in two phases.
 
@@ -7,7 +9,7 @@ Advanced ML / Deep Learning course project (Rishihood University). The project c
 |---|---|---|
 | Question | How accurately can phoneme durations be obtained and predicted from text? | Does a learned acoustic model fix what duration-only synthesis lacks? |
 | Status | **Implemented** (notebooks 00-09, report) | **Planned** (interfaces and assets prepared) |
-| Output | Aligned dataset, duration predictors, metrics, IEEE report | Mel decoder (+ optional diffusion), vocoder, audio demo, WER, listening study |
+| Output | Aligned dataset, duration predictors, metrics, [IEEE report](https://drive.google.com/file/d/1xO5BsrqZUCg760619DLzAZWQXm4BS0Gm/view?usp=sharing) | Mel decoder (+ optional diffusion), vocoder, audio demo, WER, listening study |
 
 ---
 
