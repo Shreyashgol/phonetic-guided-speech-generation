@@ -1,17 +1,286 @@
 \documentclass[conference]{IEEEtran}
-\usepackage{graphicx,booktabs,amsmath,cite}
-\title{Phonetic Guided Speech Generation: Phase 1, Alignment and Duration Prediction}
-\author{\IEEEauthorblockN{Team members}\IEEEauthorblockA{Rishihood University}}
-\begin{document}\maketitle
-\begin{abstract} One paragraph: problem, data (LJSpeech, 13{,}100 clips), method (MFA alignment + duration predictors), main result (best MAE in frames/ms), main limitation. \end{abstract}
-\section{Introduction} % motivation: TTS needs duration; what Phase 1 delivers
-\section{Literature Review} % McAuliffe 2017 (MFA); HMM forced alignment; FastSpeech duration predictor; Grad-TTS as Phase 2 context
-\section{Dataset and EDA} % clips, alignment failures/QA, duration distributions; \input{tables/dataset.tex}; \includegraphics{figures/overall_hist.png}
-\section{Forced Alignment: Theory} % 3-state left-to-right HMM, GMM emissions, Viterbi, EM; HMM duration model vs data (figures/hmm_vs_real.png)
-\section{Feature Engineering} % five feature groups, utterance-level split, target in log frames
-\section{Models} % baselines, Ridge, gradient boosting, BiLSTM; loss and tuning protocol
-\section{Results} % \input{tables/models.tex}; figures/models.png; ablation: \input{tables/ablation.tex}
-\section{Error Analysis and Limitations} % bias, worst cases, label noise from forced alignment
-\section{Conclusion and Phase 2 Outlook}
-\bibliographystyle{IEEEtran}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx,booktabs,amsmath,amssymb,xcolor,url,cite,multirow,array}
+\usepackage[hidelinks]{hyperref}
+\hyphenation{Align-er phone-me}
+
+% ---------- helpers ----------
+\newcommand{\tbd}[1]{\textcolor{red}{\textbf{[#1]}}}        % unfilled value
+\newcommand{\figbox}[3]{%                                    % file, caption, label
+  \begin{figure}[!t]\centering
+  \IfFileExists{figures/#1}{\includegraphics[width=\columnwidth]{figures/#1}}%
+  {\fbox{\parbox{0.9\columnwidth}{\centering\tbd{missing figure \detokenize{#1}; run notebook 09}}}}%
+  \caption{#2}\label{fig:#3}\end{figure}}
+\newcommand{\safeinput}[1]{\IfFileExists{#1}{\input{#1}}{\par\tbd{missing \detokenize{#1}; run notebook 09}\par}}
+\input{results_macros.tex}
+
+\setlength{\textfloatsep}{10pt plus 2pt minus 4pt}
+\setlength{\floatsep}{8pt plus 2pt minus 2pt}
+\setlength{\intextsep}{8pt plus 2pt minus 2pt}
+\renewcommand{\topfraction}{0.9}\renewcommand{\textfraction}{0.1}\renewcommand{\floatpagefraction}{0.8}
+\begin{document}
+
+\title{Phonetic Guided Speech Generation, Phase~1:\\Forced Alignment and Duration Prediction (ML Baseline)}
+\author{\IEEEauthorblockN{\teamA, \teamB, \teamC, \teamD, \teamE}
+\IEEEauthorblockA{Advanced Machine Learning / Deep Learning Project, Rishihood University\\
+Code: \url{\repoURL}}}
+\maketitle
+
+% =====================================================================
+\begin{abstract}
+Text-to-speech (TTS) needs to know \emph{when} each phoneme occurs and \emph{how long} it lasts.
+This report covers Phase~1 of a project comparing explicit phoneme-duration alignment with a learned acoustic generator.
+Phase~1 is the classical machine-learning part: (i) forced alignment of LJSpeech with the Montreal Forced Aligner (MFA) to obtain phoneme-level ground truth,
+(ii) exploratory analysis of the resulting durations, and (iii) a ladder of duration predictors from group-mean baselines to ridge regression, gradient-boosted trees and a BiLSTM.
+\nFailed{} of \nClips{} utterances failed to align; \nExcluded{} (\pctExcluded{}) were removed by quality checks, mostly because of out-of-dictionary words.
+On a held-out, utterance-disjoint test set the best model (\bestModel) reaches a mean absolute error of \maeBest{} frames (\maeBestMs{} ms),
+against \maeBase{} frames for the per-phoneme-mean baseline; the improvement is \gainFrames{} frames (95\% bootstrap CI \gainLow--\gainHigh).
+We also analyse where the models fail and which feature groups matter.
+\end{abstract}
+
+\begin{IEEEkeywords}
+forced alignment, phoneme duration, text-to-speech, hidden Markov models, LJSpeech, Montreal Forced Aligner
+\end{IEEEkeywords}
+
+% =====================================================================
+\section{Introduction}
+\subsection{Problem and scope}
+An explicit duration model tells a TTS system how many acoustic frames each phoneme occupies, but it does not produce timbre, coarticulation or prosody.
+The full project (Phases~1 and 2) asks whether a learned acoustic generator fixes what duration-only synthesis lacks.
+\textbf{Phase~1 covers only the ML component}: alignment, data analysis, feature engineering and duration regression. No audio is synthesised here.
+
+\subsection{Objectives}
+\begin{enumerate}
+\item Produce reliable phoneme-level duration labels for LJSpeech and quantify their quality.
+\item Characterise duration statistics and test them against the HMM duration model that underlies forced alignment.
+\item Build and fairly compare duration predictors of increasing capacity.
+\item Document failure modes and set up reusable assets for Phase~2.
+\end{enumerate}
+
+\subsection{Contributions}
+\begin{itemize}
+\item A reproducible pipeline: text cleaning $\rightarrow$ MFA alignment $\rightarrow$ QA $\rightarrow$ features $\rightarrow$ models $\rightarrow$ evaluation, driven by one shared audio configuration.
+\item Alignment QA with four proxy checks that detect \emph{bad} (not only failed) alignments.
+\item A frozen, utterance-level train/validation/test split to be reused unchanged in Phase~2.
+\item Utterance-bootstrap confidence intervals, a paired significance test and a feature-group ablation.
+\end{itemize}
+
+\subsection{Evaluation map}
+Table~\ref{tab:map} links each Phase~1 evaluation criterion to where it is addressed.
+
+\begin{table}[t]\centering\caption{Where each Phase~1 criterion is addressed.}\label{tab:map}
+\footnotesize
+\begin{tabular}{@{}p{2.5cm}p{1.2cm}p{3.9cm}@{}}
+\toprule
+Criterion & Section & Evidence in repository \\ \midrule
+Literature review & \ref{sec:lit} & references; MFA, FastSpeech, Grad-TTS \\
+Dataset quality \& EDA & \ref{sec:data} & notebooks 01--04; \texttt{alignment\_qa.csv} \\
+Feature engineering & \ref{sec:feat} & notebook 05; \texttt{feature\_sets.py} \\
+Theoretical rigor & \ref{sec:theory} & derivations; HMM-vs-data test (nb.~04) \\
+Model application & \ref{sec:models},\ref{sec:results} & notebooks 06--08 \\
+Code quality & \ref{sec:repro} & public repo, configs, frozen splits \\
+Presentation, viva & \ref{sec:contrib} & per-member contribution table \\ \bottomrule
+\end{tabular}
+\end{table}
+
+% =====================================================================
+\section{Literature Review}\label{sec:lit}
+\textbf{Forced alignment.}
+Classical alignment models each phoneme as a left-to-right hidden Markov model (HMM) with Gaussian-mixture emissions over spectral features and finds the best state path by Viterbi decoding \cite{rabiner1989,viterbi1967}; parameters are trained with expectation--maximisation (EM) \cite{dempster1977}.
+The Montreal Forced Aligner (MFA) packages this on top of Kaldi \cite{povey2011}, training monophone then triphone models and offering pretrained English models and dictionaries \cite{mcauliffe2017}.
+Alignment quality depends on the pronunciation dictionary and transcript fidelity, so out-of-vocabulary words and noisy transcripts are the main failure sources.
+
+\textbf{Duration modelling in TTS.}
+In HMM-based synthesis, duration is implicit in state self-transition probabilities, which yields geometric-like distributions that fit natural speech poorly \cite{rabiner1989}.
+Neural TTS made duration explicit: FastSpeech trains a duration predictor on alignments from a teacher and uses a length regulator to expand phoneme encodings to frame length \cite{ren2019}; FastSpeech~2 predicts log-domain durations directly from forced-alignment targets \cite{ren2021}.
+Our Phase~1 predictors follow the same recipe (log-domain targets, alignment-derived labels).
+
+\textbf{Diffusion-based acoustic generation.}
+Grad-TTS generates mel-spectrograms with a score-based diffusion decoder conditioned on text and a duration alignment \cite{popov2021}; a neural vocoder such as HiFi-GAN converts mels to waveforms \cite{kong2020}.
+This is the Phase~2 context; Phase~1 supplies its duration labels and baseline.
+
+\textbf{Gap addressed.}
+Published systems rarely report how much duration is predictable from text alone, nor how alignment label noise limits the achievable error.
+We measure both on a single-speaker corpus.
+
+% =====================================================================
+\section{Dataset, Alignment and EDA}\label{sec:data}
+\subsection{Corpus}
+LJSpeech 1.1 \cite{ljspeech2017}: \nClips{} clips from one female speaker reading non-fiction (public domain), $\approx$\totalHours{} h in total.
+Clip length: min \minDur{} s, mean \meanDur{} s, max \maxDur{} s. All files are 22{,}050~Hz, mono, 16-bit PCM (checked on every file).
+The transcript file has raw and normalised text; \nRawNeqNorm{} rows differ (numbers and abbreviations are expanded in the normalised column, which we use).
+After our cleaning (lowercase, no punctuation) the text contains \vocabSize{} distinct words, of which \nSingletons{} occur once.
+
+\subsection{Text preparation}
+For MFA we lowercase, strip accents (Unicode NFKD), replace hyphens by spaces and remove all punctuation. Punctuation is not discarded: each word keeps a code (none / comma-like / sentence-final) used later as a feature.
+A \emph{shared phoneme inventory} (15 vowels, 24 consonants in ARPAbet, plus \texttt{sil} and \texttt{spn}) is defined once and imported by both phases.
+
+\subsection{Forced alignment}
+We use MFA \mfaVersion{} with the pretrained \texttt{english\_us\_arpa} acoustic model and dictionary, single-speaker mode, no retraining; aligning all \nClips{} clips took about 22 minutes on a Colab CPU.
+Phone boundaries are converted from seconds to mel frames at 22{,}050~Hz, hop 256 (11.6~ms/frame) with \emph{cumulative rounding}, so intervals remain contiguous. The shared audio configuration (FFT 1024, hop 256, 80 mels, 0--8~kHz) matches common pretrained vocoders.
+
+\textbf{Dictionary coverage.} \nOOVtypes{} word types (\nOOVtokens{} tokens, \pctOOVtokens{} of all tokens) are absent from the dictionary; MFA maps them to the unknown-noise phone \texttt{spn}. The most frequent are abbreviations and names (\emph{mrs}, \emph{mr}, \emph{fbi}, \emph{motorcade}, \emph{connally}).
+
+\textbf{Failures.} \nFailed{} of \nClips{} utterances produced no alignment and are logged in \texttt{failed\_utterances.csv}.
+
+\textbf{Quality control for bad alignments.}
+No ground truth exists, so four proxy flags are computed per utterance: (i) any \texttt{spn} phone (\nFlagSpn{} utterances); (ii) speech rate (phones per second of speech) outside the 0.5th--99.5th percentile, i.e.\ 8.3--14.3 phones/s (\nFlagRate{}); (iii) more than 20\% of speech phones at $\le$2 frames (\nFlagMin{}, so this check never triggered); (iv) leading silence $>1$~s or trailing silence $>1.5$~s (\nFlagSil{}).
+The flags overlap; \nExcluded{} utterances (\pctExcluded{}) are excluded and \nKept{} remain, dominated by the \texttt{spn} flag. Random and flagged clips were also inspected visually (boundaries on the mel spectrogram) and by listening.
+
+\subsection{Exploratory analysis}
+The \nSpeechPhones{} retained speech phones have mean duration \meanPhoneFrames{} frames (median 7, maximum 93). 293 phones rounded to zero frames and are clipped to one frame.
+\begin{itemize}
+\item \textbf{Skew.} Durations are right-skewed; $\log d$ is far more symmetric (Fig.~\ref{fig:hist}), motivating log-domain regression.
+\item \textbf{Class.} Class means range from 5.78 frames (glides) and 6.07 (nasals) to 8.27 (fricatives) and 10.39 (affricates); vowels average \meanVowel{} and stops \meanStop{}, but vowels vary most (std 4.66 frames). Individual phones differ more than classes: DH averages 3.67 frames and AW 15.31 (Fig.~\ref{fig:box}).
+\item \textbf{Context.} Primary-stressed vowels are longer than unstressed ones by \stressGap{} frames (9.37 vs.\ 5.81); phones before a pause by \pauseGap{} frames (13.28 vs.\ 7.14); word-final phones by only \wordFinalGap{}. Interior pauses have a median length of 15 frames. These effects define the feature groups of Sec.~\ref{sec:feat}.
+\end{itemize}
+\figbox{overall_hist.png}{Duration of all speech phones in frames (left) and on log scale (right).}{hist}
+\figbox{per_phone_box.png}{Duration per phoneme, sorted by mean.}{box}
+\safeinput{tables/dataset.tex}
+
+% =====================================================================
+\section{Theoretical Foundations}\label{sec:theory}
+\subsection{HMM forced alignment}
+Each phoneme is a 3-state left-to-right HMM with transition probabilities $a_{ij}$ and emission density
+$b_j(\mathbf{o})=\sum_{m}c_{jm}\,\mathcal{N}(\mathbf{o};\boldsymbol\mu_{jm},\boldsymbol\Sigma_{jm})$ over MFCC frames $\mathbf{o}_t$ (10~ms shift).
+Given the transcript, the phoneme HMMs are concatenated into one utterance HMM, so only the state path is unknown. Viterbi decoding finds
+\begin{equation}
+\delta_t(j)=\max_i\big[\delta_{t-1}(i)\,a_{ij}\big]\,b_j(\mathbf{o}_t),
+\end{equation}
+and back-pointers recover the best path; phoneme boundaries are the points where the path leaves one phoneme's states.
+Acoustic parameters are estimated by EM: the E-step uses forward--backward posteriors (soft state occupancies, summed over all paths), the M-step re-estimates means, covariances, mixture weights and transitions \cite{dempster1977,rabiner1989}.
+\emph{Viterbi answers ``what is the single best path''; forward--backward answers ``how likely is state $s$ at frame $t$ over all paths''.}
+
+\subsection{Duration under an HMM}
+A state with self-loop probability $a$ gives a geometric duration $P(d)=a^{d-1}(1-a)$ with mean $1/(1-a)$, whose mode is always 1.
+A phone of three left-to-right states has the sum of three such durations, a negative binomial shifted by 3:
+\begin{equation}
+P(d)=\binom{d-1}{2}(1-a)^3a^{\,d-3},\quad d\ge3,\quad \mathbb{E}[d]=\frac{3}{1-a}.
+\end{equation}
+Both have a fixed shape that cannot adapt to context; Sec.~\ref{sec:eda-theory} compares them to the data.
+
+\subsection{Regression on log-duration}
+Let $d_i\ge1$ be the duration in frames of phone $i$ and $y_i=\log d_i$. A predictor $f$ is trained by (masked) squared error in log space,
+\begin{equation}
+\mathcal{L}=\frac{1}{|\mathcal{M}|}\sum_{i\in\mathcal{M}}\big(f(\mathbf{x}_i)-y_i\big)^2,\qquad \hat d_i=\exp f(\mathbf{x}_i).
+\end{equation}
+Because $\log$ is monotone, $\exp f$ estimates the conditional median when log-residuals are roughly symmetric, and the median minimises expected absolute error, our main metric.
+
+\subsection{Model classes}
+\textbf{Ridge regression} minimises $\|\mathbf{y}-X\mathbf{w}\|^2+\alpha\|\mathbf{w}\|^2$; the $L_2$ penalty shrinks weights of rare one-hot categories \cite{hoerl1970}.
+\textbf{Gradient-boosted trees} add trees fitted to the residual gradient of the loss \cite{friedman2001}, capturing non-linear interactions (e.g.\ stress $\times$ pause).
+\textbf{BiLSTM} reads the whole phone sequence in both directions \cite{hochreiter1997}; right context matters because phrase-final lengthening depends on what follows.
+
+% =====================================================================
+\section{Feature Engineering}\label{sec:feat}
+\textbf{Unit and target.} One row per speech phone; silence and \texttt{spn} rows are not modelled but signalled by \texttt{pause\_before/after}. Target: duration in frames (clipped at 1).
+Table~\ref{tab:feat} lists the five feature groups.
+
+\begin{table}[t]\centering\caption{Feature groups (identical for all models).}\label{tab:feat}
+\footnotesize\begin{tabular}{@{}p{1.6cm}p{4.2cm}p{1.6cm}@{}}
+\toprule
+Group & Features & Motivation \\ \midrule
+identity & phone, stress, class, is-vowel & intrinsic duration \\
+context & previous/next two phones & coarticulation \\
+word & position and length in word, first/last & word-final lengthening \\
+utterance & word index, relative position, lengths & phrase effects \\
+pause/punct. & pause before/after, punctuation after word & phrase-final lengthening \\ \bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Splitting and leakage control.}
+Phones of one sentence are strongly correlated, so splitting by phone would leak. We split by \emph{utterance} over all \nClips{} ids with a fixed seed (42): train/val/test = \nTrainIds{}/\nValIds{}/\nTestIds{} utterances (90/5/5\%), stored as files and never regenerated. Alignment exclusions are applied afterwards, so the test set is stable.
+Hyper-parameters are tuned on validation only; the test set is scored once.
+
+% =====================================================================
+\section{Models and Experimental Protocol}\label{sec:models}
+\subsection{Models}
+\begin{itemize}
+\item \textbf{Global mean}: one value (floor).
+\item \textbf{Phone mean} (AML baseline): median duration per phoneme.
+\item \textbf{Back-off table}: median per (phone, stress, pause-after), backing off to (phone, stress) then phone when fewer than 20 training rows.
+\item \textbf{Ridge}: one-hot categoricals, standardised numerics, target $\log d$; $\alpha\in\{0.1,1,10,100\}$.
+\item \textbf{Gradient-boosted trees} (histogram-based): categorical splits; (learning rate, iterations) $\in\{(0.1,200),(0.05,400)\}$.
+\item \textbf{BiLSTM}: embeddings (phone 64, stress 8, class 8, punctuation 4) and a linear layer on 11 numeric/flag inputs, 2-layer bidirectional LSTM (hidden 128, dropout 0.2), MLP $256\!\to\!64\!\to\!1$; \nnParams{} parameters. AdamW (lr $2\!\times\!10^{-3}$, weight decay $10^{-4}$), batch 64, $\le$30 epochs, learning rate halved on plateau, gradient clipping 1.0, early stopping (patience 5) on validation MAE; \nnEpochs{} epochs run; seed 0; trained on \gpuName{}.
+\end{itemize}
+
+\subsection{Metrics}
+With $\hat d_i$ the prediction and $N$ test phones: $\mathrm{MAE}=\frac1N\sum|\hat d_i-d_i|$, $\mathrm{RMSE}=\sqrt{\frac1N\sum(\hat d_i-d_i)^2}$, $R^2=1-\sum(\hat d_i-d_i)^2/\sum(d_i-\bar d)^2$. Frames convert to ms by $\times11.6$.
+\textbf{Confidence intervals}: 1000 bootstrap resamples of \emph{utterances} (not phones, which are not independent); 95\% percentile intervals. \textbf{Significance}: paired bootstrap of the MAE difference between baseline and best model on identical resamples.
+
+% =====================================================================
+\section{Results}\label{sec:results}
+\subsection{Model comparison}
+\safeinput{tables/models.tex}
+\figbox{models.png}{Test MAE with 95\% utterance-bootstrap intervals.}{models}
+Table~\ref{tab:models} shows the test results. The best model, \bestModel, has MAE \maeBest{} frames (\maeBestMs{} ms; CI \ciBestLow--\ciBestHigh) and $R^2=\rsqBest$.
+Relative to the phone-mean baseline (\maeBase{} frames, \maeBaseMs{} ms), the paired MAE gain is \gainFrames{} frames (95\% CI \gainLow--\gainHigh).
+The ranking is monotone in model capacity: global mean 3.138 $>$ phone mean 2.400 $>$ back-off 2.220 $>$ Ridge 2.013 $>$ gradient boosting 1.540 $>$ BiLSTM 1.330 frames. The BiLSTM beats gradient boosting by 0.21 frames (1.330 vs.\ 1.540; $R^2$ 0.775 vs.\ 0.697) and the 95\% intervals ([1.310, 1.353] vs.\ [1.517, 1.566]) do not overlap. Ridge's validation MAE was insensitive to $\alpha$ (2.021--2.022), so its limit is linearity, not regularisation.
+
+\subsection{Ablation}
+\safeinput{tables/ablation.tex}
+Removing \topAblation{} hurts most (Table~\ref{tab:ablation}). Context features come next (+0.402 frames), then pause/punctuation (+0.114) and word features (+0.061); utterance-level features give no measurable benefit ($-0.006$). Identity features alone reach 2.388 frames, about the phone-mean baseline (2.400), so context, pause and word information account for 0.85 frames of improvement. This matches Sec.~\ref{sec:data}: the pre-pause effect (+6.14 frames) is large, and only 5\% of phones precede a pause, yet \texttt{pause\_after} still matters because those phones carry the largest errors (error analysis below).
+\figbox{ablation.png}{Increase in test MAE when a feature group is removed.}{abl}
+
+\subsection{Error analysis}
+\figbox{error_analysis.png}{Best model: predicted vs.\ true duration (left) and MAE by true-duration bin (right).}{err}
+The largest relative error is in \worstClass{} (Fig.~\ref{fig:per_phone}). Errors show \emph{shrinkage toward the mean}: phones of $\le3$ frames are over-predicted by 0.88 frames on average, while phones of 12--20 and $>20$ frames are under-predicted by 1.77 and 4.79 frames (MAE 2.52 and 5.13). Phones followed by a pause have MAE 2.64 against 1.26 otherwise. By absolute error the diphthongs and long vowels are worst (OY 2.21, AY 2.15, AE 2.11, AW 2.05 frames); by relative error glides (0.204), nasals (0.199) and liquids (0.193) are worst, with vowels at 0.184.
+The worst utterances (LJ024-0071, LJ017-0250, LJ036-0073) have mean errors of 3.17, 2.33 and 2.10 frames against 1.33 overall; Six of the ten worst utterances come from only two chapters: LJ028 (four; archaic wording with names and ``thou'') and LJ024 (two; the text of a political speech). This suggests that unusual vocabulary and oratorical delivery, rather than random clips, drive the largest errors; we did not isolate individual alignment mistakes.
+\figbox{per_phone.png}{Test MAE per phoneme (best model).}{per_phone}
+
+\subsection{HMM duration model versus real durations}\label{sec:eda-theory}
+\figbox{hmm_vs_real.png}{Real duration histograms (bars) versus a geometric (single-state) and a 3-state negative-binomial model with the same mean.}{hmm}
+Over the 12 most frequent phones the 3-state negative-binomial model fits \emph{better} only for longer phones (S $-2.87$ vs.\ $-3.35$ for geometric, Z $-2.66$ vs.\ $-3.13$, K $-2.62$ vs.\ $-3.15$; means 9--11 frames) and \emph{worse} for short ones (AH $-3.94$ vs.\ $-2.47$, DH $-4.64$ vs.\ $-2.15$; also N, D, R), because durations below 3 frames are impossible under it yet occur for 12.4\% of DH and 7.8\% of AH. Neither fixed shape fits every phone, which motivates a context-aware learned predictor. Caveat: MFA works in 10~ms frames while we count 11.6~ms frames, so the comparison is approximate.
+
+% =====================================================================
+\section{Discussion and Limitations}
+\begin{itemize}
+\item \textbf{Label noise.} Targets come from forced alignment, whose boundaries are themselves HMM estimates on a 10~ms grid; our predictors cannot beat the alignment's own error, and some bias of the HMM duration model is inherited by the labels.
+\item \textbf{Irreducible variance.} Speaker choices (emphasis, rate within a sentence) are not recoverable from text, so $R^2$ has a ceiling below 1.
+\item \textbf{Quantisation.} Converting 10~ms alignment frames to 11.6~ms mel frames adds rounding of up to half a frame.
+\item \textbf{Single speaker, English, read speech.} Results may not transfer to expressive or multi-speaker data.
+\item \textbf{Exclusions.} Removing \pctExcluded{} of utterances (mostly \texttt{spn} from abbreviations and proper names such as \emph{mr}, \emph{mrs}, \emph{fbi}) biases the retained set away from such text; extending the dictionary would recover most of them.
+\item \textbf{No audio yet.} WER via a held-out ASR and the listening study require synthesis and belong to Phase~2.
+\end{itemize}
+
+\section{Conclusion and Phase~2 Outlook}
+Phase~1 delivers validated duration labels (\nKept{} utterances), a frozen split and a documented comparison of duration predictors (best: \bestModel, MAE \maeBest{} frames).
+Phase~2 will feed phonemes and (true or predicted) durations through a length regulator into a learned mel decoder (optionally diffusion-based, following Grad-TTS), render audio with a pretrained vocoder, and compare against duration-only synthesis using held-out-ASR WER, duration MAE and a small human intelligibility preference study, always on the same test split.
+
+% =====================================================================
+\section{Reproducibility}\label{sec:repro}
+Public repository: \url{\repoURL}. Order of execution: notebooks 00 $\rightarrow$ 09 (see \texttt{README.md}). Shared settings live in \texttt{configs/data.yaml} (22{,}050~Hz, FFT 1024, hop 256, 80 mels); splits in \texttt{data/splits/}; every figure and table of this report is regenerated by notebook 09 from files in \texttt{results/}. Seeds: split 42, models 0. Software: Python, PyTorch \cite{paszke2019}, scikit-learn \cite{pedregosa2011}, MFA \mfaVersion. The dataset and checkpoints are not committed.
+
+\section{Individual Contributions}\label{sec:contrib}
+Each member owns one area and can explain every stage in the individual viva (Table~\ref{tab:contrib}).
+\begin{table}[h]\centering\caption{Contributions.}\label{tab:contrib}
+\footnotesize\begin{tabular}{@{}p{1.5cm}p{3.1cm}p{3.1cm}@{}}
+\toprule Member & Main area & Notebooks / sections \\ \midrule
+\teamA & Dataset exploration, EDA, theoretical rigor (HMM alignment, duration theory) & Notebooks 01--04; Sec.~\ref{sec:data}, \ref{sec:theory} \\
+\teamB & Model application and rigor & Notebooks 06--08; Sec.~\ref{sec:models}, \ref{sec:results} \\
+\teamC & Model application and rigor & Notebooks 06--08; Sec.~\ref{sec:models}, \ref{sec:results} \\
+\teamD & Feature engineering, theoretical rigor (HMM alignment, duration theory)& Notebook 04--05; Sec.~\ref{sec:feat} \\
+\teamE & Report, presentation, literature review, README & Sec.~\ref{sec:lit}, introduction, discussion, conclusion \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =====================================================================
+\begin{thebibliography}{99}
+\bibitem{mcauliffe2017} M.~McAuliffe, M.~Socolof, S.~Mihuc, M.~Wagner, and M.~Sonderegger, ``Montreal Forced Aligner: Trainable text-speech alignment using Kaldi,'' in \emph{Proc. Interspeech}, 2017, pp.\ 498--502.
+\bibitem{popov2021} V.~Popov, I.~Vovk, V.~Gogoryan, T.~Sadekova, and M.~Kudinov, ``Grad-TTS: A diffusion probabilistic model for text-to-speech,'' in \emph{Proc. ICML}, PMLR 139, 2021, pp.\ 8599--8608.
+\bibitem{ljspeech2017} K.~Ito and L.~Johnson, ``The LJ Speech Dataset,'' 2017. [Online]. Available: \url{https://keithito.com/LJ-Speech-Dataset/}
+\bibitem{rabiner1989} L.~R.~Rabiner, ``A tutorial on hidden Markov models and selected applications in speech recognition,'' \emph{Proc. IEEE}, vol.~77, no.~2, pp.\ 257--286, 1989.
+\bibitem{viterbi1967} A.~J.~Viterbi, ``Error bounds for convolutional codes and an asymptotically optimum decoding algorithm,'' \emph{IEEE Trans. Inf. Theory}, vol.~13, no.~2, pp.\ 260--269, 1967.
+\bibitem{dempster1977} A.~P.~Dempster, N.~M.~Laird, and D.~B.~Rubin, ``Maximum likelihood from incomplete data via the EM algorithm,'' \emph{J. R. Stat. Soc. B}, vol.~39, no.~1, pp.\ 1--38, 1977.
+\bibitem{povey2011} D.~Povey \emph{et al.}, ``The Kaldi speech recognition toolkit,'' in \emph{Proc. IEEE ASRU}, 2011.
+\bibitem{ren2019} Y.~Ren \emph{et al.}, ``FastSpeech: Fast, robust and controllable text to speech,'' in \emph{Proc. NeurIPS}, 2019.
+\bibitem{ren2021} Y.~Ren \emph{et al.}, ``FastSpeech 2: Fast and high-quality end-to-end text to speech,'' in \emph{Proc. ICLR}, 2021.
+\bibitem{kong2020} J.~Kong, J.~Kim, and J.~Bae, ``HiFi-GAN: Generative adversarial networks for efficient and high fidelity speech synthesis,'' in \emph{Proc. NeurIPS}, 2020.
+\bibitem{hoerl1970} A.~E.~Hoerl and R.~W.~Kennard, ``Ridge regression: Biased estimation for nonorthogonal problems,'' \emph{Technometrics}, vol.~12, no.~1, pp.\ 55--67, 1970.
+\bibitem{friedman2001} J.~H.~Friedman, ``Greedy function approximation: A gradient boosting machine,'' \emph{Ann. Statist.}, vol.~29, no.~5, pp.\ 1189--1232, 2001.
+\bibitem{hochreiter1997} S.~Hochreiter and J.~Schmidhuber, ``Long short-term memory,'' \emph{Neural Comput.}, vol.~9, no.~8, pp.\ 1735--1780, 1997.
+\bibitem{paszke2019} A.~Paszke \emph{et al.}, ``PyTorch: An imperative style, high-performance deep learning library,'' in \emph{Proc. NeurIPS}, 2019.
+\bibitem{pedregosa2011} F.~Pedregosa \emph{et al.}, ``Scikit-learn: Machine learning in Python,'' \emph{J. Mach. Learn. Res.}, vol.~12, pp.\ 2825--2830, 2011.
+\end{thebibliography}
 \end{document}
