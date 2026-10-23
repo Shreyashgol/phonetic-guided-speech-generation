@@ -17,4 +17,4 @@ __pycache__/
 *.key
 shera/
 data/.DS_Store
-reports/.DS_Store    
+reports/.DS_Store 
