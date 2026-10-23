@@ -1,0 +1,68 @@
+% ======================================================================
+%  RESULT MACROS: the ONLY file you need to edit with numbers.
+%  Every red [..] in the PDF is a macro you have not filled yet.
+%  Replace \tbd{...} by the plain value, e.g. \newcommand{\nFailed}{37}
+% ======================================================================
+\newcommand{\repoURL}{https://github.com/Shreyashgol/phonetic-guided-speech-generation}
+
+% ---- Filled from your executed notebooks 01-08 ----
+\newcommand{\nClips}{13{,}100}
+\newcommand{\totalHours}{23.92}
+\newcommand{\minDur}{1.11}
+\newcommand{\meanDur}{6.57}
+\newcommand{\maxDur}{10.10}
+\newcommand{\vocabSize}{14{,}058}
+\newcommand{\nSingletons}{5{,}513}
+\newcommand{\nRawNeqNorm}{1{,}505}
+\newcommand{\nTrainIds}{11{,}790}   % 90\% of 13,100
+\newcommand{\nValIds}{655}
+\newcommand{\nTestIds}{655}
+
+% ---- Notebook 03 (alignment + QA) ----
+\newcommand{\mfaVersion}{3.4.3}
+\newcommand{\nOOVtypes}{420}
+\newcommand{\nOOVtokens}{1{,}863}
+\newcommand{\pctOOVtokens}{0.83\%}
+\newcommand{\nFailed}{0}
+\newcommand{\nAligned}{13{,}100}
+\newcommand{\nFlagSpn}{1{,}562}
+\newcommand{\nFlagRate}{132}
+\newcommand{\nFlagMin}{0}
+\newcommand{\nFlagSil}{8}
+\newcommand{\nExcluded}{1{,}684}
+\newcommand{\pctExcluded}{12.9\%}
+\newcommand{\nKept}{11{,}416}
+
+% ---- Notebook 04 (EDA) ----
+\newcommand{\nSpeechPhones}{777{,}055}
+\newcommand{\meanPhoneFrames}{7.46}
+\newcommand{\meanVowel}{7.69}
+\newcommand{\meanStop}{7.33}
+\newcommand{\stressGap}{3.56}
+\newcommand{\pauseGap}{6.14}
+\newcommand{\wordFinalGap}{0.59}
+
+% ---- Notebook 06/07/08 (models) ----
+\newcommand{\bestModel}{BiLSTM}
+\newcommand{\maeBase}{2.400}
+\newcommand{\maeBaseMs}{27.9}
+\newcommand{\maeBest}{1.330}
+\newcommand{\maeBestMs}{15.4}
+\newcommand{\ciBestLow}{1.310}
+\newcommand{\ciBestHigh}{1.353}
+\newcommand{\gainFrames}{1.071}
+\newcommand{\gainLow}{1.048}
+\newcommand{\gainHigh}{1.092}
+\newcommand{\rsqBest}{0.775}
+\newcommand{\nnParams}{650{,}293}
+\newcommand{\nnEpochs}{25}
+\newcommand{\topAblation}{the identity features (phone, stress, class)}
+\newcommand{\worstClass}{glides (relative MAE 20.4\%)}
+\newcommand{\gpuName}{a Colab CUDA GPU}
+
+% ---- Team (the viva is individual: fill truthfully) ----
+\newcommand{\teamA}{Shreyash Golhani}
+\newcommand{\teamB}{Vaageesh Kumar Singh}
+\newcommand{\teamC}{Anwesha Adhikari}
+\newcommand{\teamD}{Ananya Narang}
+\newcommand{\teamE}{Aman Kumar}

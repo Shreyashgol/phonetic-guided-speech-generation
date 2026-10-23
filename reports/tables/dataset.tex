@@ -1,23 +1,22 @@
-\begin{table}
+\begin{table}[!t]
+\centering
 \caption{Dataset and alignment summary.}
 \label{tab:data}
-\begin{tabular}{ll}
+\footnotesize
+\resizebox{\columnwidth}{!}{\begin{tabular}{@{}lr@{}}
 \toprule
 Item & Value \\
 \midrule
-n_clips & 13100 \\
-total_hours & 23.92 \\
-mean_duration_s & 6.57 \\
-max_duration_s & 10.1 \\
-sample_rates & {'22050': 13100} \\
-mean_words_per_sec & 2.59 \\
-vocab_size & 14775 \\
-rows_raw_neq_norm & 1505 \\
-n_utts & 11416 \\
-n_phones & 777055 \\
-mean_frames & 7.456041078173359 \\
-median_frames & 7.0 \\
-p999_frames & 30.0 \\
+Clips (22{,}050~Hz, mono) & 13{,}100 \\
+Total duration & 23.92~h \\
+Clip length: mean (min--max) & 6.57~s (1.11--10.10) \\
+Vocabulary after cleaning & 14{,}058 words \\
+Out-of-dictionary word types / tokens & 420 / 1{,}863 \\
+Failed alignments & 0 \\
+Excluded by quality checks & 1{,}684 (12.9\%) \\
+Utterances kept & 11{,}416 \\
+Speech phones kept & 777{,}055 \\
+Mean phone duration & 7.46 frames \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \end{table}
