@@ -1,6 +1,6 @@
 # Phonetic Guided Speech Generation
 
-📄 **Phase 1 Report:** [Read Report on Google Drive](https://drive.google.com/file/d/1xO5BsrqZUCg760619DLzAZWQXm4BS0Gm/view?usp=sharing)
+📄 **Phase 1 Report:** [Read Report on Google Drive](https://drive.google.com/file/d/18pxGjFboRaed_xukYO8-U8Kns3fKvJRJ/view)
 
 **Phoneme alignment and duration modelling for text-to-speech, built on LJSpeech.**
 Advanced ML / Deep Learning course project (Rishihood University). The project compares **explicit phoneme-duration alignment** with a **learned acoustic generator** (diffusion extension), and is delivered in two phases.
@@ -9,7 +9,7 @@ Advanced ML / Deep Learning course project (Rishihood University). The project c
 |---|---|---|
 | Question | How accurately can phoneme durations be obtained and predicted from text? | Does a learned acoustic model fix what duration-only synthesis lacks? |
 | Status | **Implemented** (notebooks 00-09, report) | **Planned** (interfaces and assets prepared) |
-| Output | Aligned dataset, duration predictors, metrics, [IEEE report](https://drive.google.com/file/d/1xO5BsrqZUCg760619DLzAZWQXm4BS0Gm/view?usp=sharing) | Mel decoder (+ optional diffusion), vocoder, audio demo, WER, listening study |
+| Output | Aligned dataset, duration predictors, metrics, [IEEE report](https://drive.google.com/file/d/18pxGjFboRaed_xukYO8-U8Kns3fKvJRJ/view) | Mel decoder (+ optional diffusion), vocoder, audio demo, WER, listening study |
 
 ---
 
@@ -175,9 +175,13 @@ See [`CONTRIBUTIONS.md`](CONTRIBUTIONS.md). The viva is individual: every member
 - M. McAuliffe et al., "Montreal Forced Aligner: Trainable text-speech alignment using Kaldi," Interspeech 2017.
 - V. Popov et al., "Grad-TTS: A diffusion probabilistic model for text-to-speech," ICML 2021.
 - K. Ito and L. Johnson, "The LJ Speech Dataset," 2017.
+- L. R. Rabiner, "A tutorial on hidden Markov models...," Proc. IEEE, 1989.
+- A.J.Viterbi, "Error bounds for convolutional codes and an asymptotically optimum decoding algorithm," IEEE Transactions on Information Theory, 1967.
 - Y. Ren et al., "FastSpeech" (NeurIPS 2019) and "FastSpeech 2" (ICLR 2021).
 - J. Kong et al., "HiFi-GAN," NeurIPS 2020.
-- L. R. Rabiner, "A tutorial on hidden Markov models...," Proc. IEEE, 1989.
+- S.Hochreiter and J.Schmidhuber, "Long short-term memory," Neural Computation, 1997.
+- J. H.Friedman, "Greedy function approximation: A gradient boosting machine," Ann. Statist., vol. 29, no. 5, pp. 1189--1232, 2001.
+- A.Vaswani et al., "Attention is all you need," NeurIPS 2017.
 
 ## License
 Add a `LICENSE` file before submission (code under a licence of the team's choice; LJSpeech is public domain; MFA models have their own licences).
