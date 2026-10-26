@@ -177,9 +177,6 @@ See [`CONTRIBUTIONS.md`](CONTRIBUTIONS.md). The viva is individual: every member
 - L. R. Rabiner, "A tutorial on hidden Markov models...," Proc. IEEE, 1989.
 - A.J.Viterbi, "Error bounds for convolutional codes and an asymptotically optimum decoding algorithm," IEEE Transactions on Information Theory, 1967.
 - Y. Ren et al., "FastSpeech" (NeurIPS 2019) and "FastSpeech 2" (ICLR 2021).
-- J. Kong et al., "HiFi-GAN," NeurIPS 2020.
-- S.Hochreiter and J.Schmidhuber, "Long short-term memory," Neural Computation, 1997.
-- J. H.Friedman, "Greedy function approximation: A gradient boosting machine," Ann. Statist., vol. 29, no. 5, pp. 1189--1232, 2001.
 - A.Vaswani et al., "Attention is all you need," NeurIPS 2017.
 
 ## License
