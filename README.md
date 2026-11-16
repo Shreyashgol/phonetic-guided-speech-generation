@@ -1,6 +1,6 @@
 # Phonetic Guided Speech Generation
 
-📄 **Phase 1 Report:** [Read on Google Drive](https://drive.google.com/file/d/11P44rLZVEg6oT8ZBih7f50UpChBnJ-3z/view)  
+📄 **Report:** [Read on Google Drive](https://drive.google.com/file/d/11P44rLZVEg6oT8ZBih7f50UpChBnJ-3z/view)  
 🎧 **Live Demo:** see [README_DEMO.md](README_DEMO.md) for Colab, local, and Hugging Face Space instructions
 
 **Phoneme alignment, duration modelling and duration-controlled speech synthesis for text-to-speech, built on LJSpeech.**
