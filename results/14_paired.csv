@@ -1,0 +1,6 @@
+comparison,mean_diff,ci_lo,ci_hi,share_a_better
+phase1_bilstm - phone_mean,-0.0136,-0.0155,-0.0116,0.895
+phase1_bilstm - global_mean,-0.0213,-0.0243,-0.0185,0.92
+phase1_bilstm - own_head,-0.0015,-0.0023,-0.0005,0.57
+phase1_bilstm - ground_truth,0.0029,0.0015,0.0043,0.375
+phone_mean - ground_truth,0.0165,0.0142,0.0187,0.14

@@ -1,0 +1,5 @@
+condition,mos,ci_lo,ci_hi
+ground_truth,4.17,3.97,4.33
+natural_vocoded,4.27,4.13,4.43
+phase1_bilstm,4.13,3.93,4.33
+phone_mean,4.37,4.17,4.53

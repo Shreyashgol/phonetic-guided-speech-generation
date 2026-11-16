@@ -1,0 +1,9 @@
+torch
+numpy
+pandas
+matplotlib
+gradio
+speechbrain
+g2p_en
+librosa
+soundfile

@@ -1,0 +1,15 @@
+\begin{table}[!t]
+\caption{Paired differences in DTW mel L1 (negative: first condition is closer to the real mel).}
+\label{tab:p2pair}
+\resizebox{\columnwidth}{!}{\begin{tabular}{lrrrr}
+\toprule
+comparison & mean diff & CI low & CI high & share first closer \\
+\midrule
+BiLSTM - phone mean & -0.0136 & -0.0155 & -0.0116 & 0.8950 \\
+BiLSTM - global mean & -0.0213 & -0.0243 & -0.0185 & 0.9200 \\
+BiLSTM - own head & -0.0015 & -0.0023 & -0.0005 & 0.5700 \\
+BiLSTM - ground truth & 0.0029 & 0.0015 & 0.0043 & 0.3750 \\
+phone mean - ground truth & 0.0165 & 0.0142 & 0.0187 & 0.1400 \\
+\bottomrule
+\end{tabular}}
+\end{table}

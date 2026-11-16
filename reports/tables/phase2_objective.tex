@@ -1,0 +1,15 @@
+\begin{table}[!t]
+\caption{Duration-source ablation on test utterances: DTW log-mel L1 (lower is better) with 95\% bootstrap CIs, and absolute error of total length.}
+\label{tab:p2obj}
+\resizebox{\columnwidth}{!}{\begin{tabular}{lrrrr}
+\toprule
+condition & DTW mel L1 & CI low & CI high & length err (frames) \\
+\midrule
+ground truth (upper bound) & 0.662 & 0.656 & 0.667 & 0.000 \\
+Phase 1 BiLSTM & 0.665 & 0.659 & 0.670 & 20.150 \\
+phone mean & 0.678 & 0.673 & 0.684 & 48.450 \\
+global mean & 0.686 & 0.681 & 0.691 & 42.250 \\
+model own duration head & 0.666 & 0.661 & 0.671 & 19.855 \\
+\bottomrule
+\end{tabular}}
+\end{table}

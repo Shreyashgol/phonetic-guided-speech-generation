@@ -1,0 +1,1 @@
+Rate each clip C01..C40 for naturalness: 1 = bad, 2 = poor, 3 = fair, 4 = good, 5 = excellent. Use headphones. Fill rater (your name), code, score in rating_sheet.csv. Do not discuss clips before everyone has finished.

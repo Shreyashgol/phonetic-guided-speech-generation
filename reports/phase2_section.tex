@@ -1,0 +1,36 @@
+\section{Phase~2: Duration-Controlled Speech Synthesis}\label{sec:phase2}
+Phase~2 asks whether better phoneme durations give better synthesised speech. We train one acoustic model on the Phase~1 alignments and change only the duration source at test time.
+
+\subsection{System}
+\figbox{architecture.png}{Overall system. Phase~1 (forced alignment and duration prediction) supplies the durations that the Phase~2 acoustic model and the pretrained vocoder turn into audio.}{p2arch}
+The acoustic model follows FastSpeech~2 \cite{ren2021} without the pitch and energy predictors. Phoneme and stress embeddings with sinusoidal positions pass through four feed-forward Transformer (FFT) blocks (two-head self-attention and a one-dimensional convolutional feed-forward layer). A length regulator repeats each token vector by its duration, and four further FFT blocks produce an 80-bin mel spectrogram. The model has \ptParams{}~M parameters (hidden size 256). A small duration head (two convolutional layers predicting $\log(d{+}1)$) is trained jointly. Training uses teacher forcing: the length regulator receives the forced-alignment durations from Phase~1. Silence is kept as a token, so the durations of an utterance sum exactly to its mel length. The mel recipe (22{,}050~Hz, FFT 1024, hop 256, 80 bins, natural log) is the one the pretrained vocoder expects, and durations are in mel frames (11.6~ms), the same unit as the Phase~1 targets.
+
+\subsection{Training and vocoder}
+We use AdamW (peak learning rate $5\!\times\!10^{-4}$, 1{,}000 warm-up steps, inverse-square-root decay), batch size 16 grouped by length, mixed precision and gradient clipping at 1.0. The loss is the masked $L_1$ distance on the normalised mel plus the masked mean squared error of the log-duration. The best checkpoint (step \ptStep{}, validation mel $L_1$ \ptValMel{} in normalised units) was selected on the validation split only. Splits are the frozen Phase~1 splits. Audio is rendered by a pretrained HiFi-GAN \cite{kong2020} (SpeechBrain \cite{ravanelli2021}, trained on LJSpeech), which we did not train. Re-synthesising real clips through our mel recipe and this vocoder gave a mean log-mel $L_1$ of \csMelLone{} against the originals, and the output sounded clean on inspection.
+
+\subsection{Duration-source experiment}
+The same trained model synthesised each test utterance with five duration sources: (i)~ground truth (upper bound), (ii)~the Phase~1 BiLSTM, (iii)~the phone-mean baseline, (iv)~the global mean, and (v)~the acoustic model's own duration head. Phase~1 predicts speech phones only, so silence tokens keep their ground-truth length in every condition and only speech-phone durations differ. Because different durations give different lengths, we compare the synthesised mel $\hat M$ with the real mel $M$ after dynamic time warping \cite{sakoe1978}:
+\begin{equation}
+D(\hat M, M)=\frac{1}{|\pi^\star|\,F}\sum_{(i,j)\in\pi^\star}\lVert \hat m_i-m_j\rVert_1,\quad F=80,
+\end{equation}
+where $\pi^\star$ is the minimum-cost warping path. We also report the absolute error of total length. Intervals are 95\% bootstrap CIs over \ptEvalN{} test utterances, and conditions are compared by paired bootstrap differences on the same utterances.
+
+\subsection{Results}
+\ptFindings{}
+
+\safeinput{tables/phase2_objective.tex}
+\safeinput{tables/phase2_paired.tex}
+\figbox{p2_objective.png}{Duration-source ablation: DTW mel distance (left) and absolute total-length error (right), with 95\% bootstrap intervals.}{p2obj}
+\figbox{p2_curves.png}{Training and validation curves of the acoustic model.}{p2curves}
+
+\subsection{Subjective evaluation}
+\listeningParagraph{}
+\IfFileExists{tables/phase2_mos.tex}{\input{tables/phase2_mos.tex}}{}
+
+\subsection{Limitations of Phase~2}
+\begin{itemize}
+\item The DTW mel distance is a proxy for quality: it removes timing differences, so it measures spectral similarity given the durations, not naturalness.
+\item The acoustic model is small and has no pitch or energy predictors; its own mel error dominates the remaining distance, which limits how much better durations can help.
+\item The vocoder is pretrained, the data are one speaker of read English, and the experiment uses \ptEvalN{} test utterances.
+\item The text demonstration uses the model's own duration head; driving it with the Phase~1 BiLSTM on free text requires exposing the Phase~1 feature builder as a function (future work).
+\end{itemize}
